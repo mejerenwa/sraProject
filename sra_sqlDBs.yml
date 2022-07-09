@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: sql for SRA
+
+Parameters:
+  EnvironmentName: 
+    Type: String
+    Default: dev
+  InstanceType:
+    Type: String
+    Description: EC2 Instance type
+  Subnets:
+    Default: 'subnet-0fdc8344303884367,subnet-02a36f9e9c315f0a9'
+    Type: CommaDelimitedList
+    Description: >-
+      The list of SubnetIds, for at least two Availability Zones in the region
+      in your Virtual Private Cloud (VPC)
+  EisaiVpcId:
+    Type: String
+    Description: VPC id for instance
+    Default: vpc-0941114977abb0bc0
+  SRADBSecurityGroup:
+    Type: String
+    Description: SG  for DB instance
+    Default: "eisai-${EnvironmentName}-${AWS::Region}-SRAoracle-sg"
+  DBName:
+    Default: srasqldb
+    Description: The Oracle database name
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+  DBUsername:
+    Default: srasql2
+    NoEcho: 'true'
+    Description: The sql database admin account username
+    Type: String
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+  DBPassword:
+    Default: srasqldev
+    NoEcho: 'true'
+    Description: The Oacle database admin account password
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+  MultiAZ:
+    Description: Multi-AZ master database
+    Type: String
+    AllowedValues: ['true', 'false']
+    ConstraintDescription: Must be either true or false
+    Default: 'false'
+  
+Resources:
+  DBSubnetGroup:
+    Type: 'AWS::RDS::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupDescription: Subnets available for the RDS DB Instance
+      SubnetIds: !Ref Subnets
+          
+  SRASQLMyDB:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBName: !Ref DBName
+      DBInstanceIdentifier: !Ref DBName
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref SRADBSecurityGroup
+      AllocatedStorage: '100'
+      DBInstanceClass: db.t3.small
+      Engine: sqlserver-ee
+      #EngineVersion: '12.1.0.2.v27'
+      LicenseModel: license-included
+      Port: '1433'
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      MultiAZ: 'false'
+    DeletionPolicy: Snapshot
+
+Outputs:
+  JDBCConnectionString:
+    Description: JDBC connection string for the sql database
+    Value: !Join 
+      - ''
+      - - 'jdbc:sqlserver://'
+        - !GetAtt 
+          - SRASQLMyDB
+          - Endpoint.Address
+        - ':'
+        - !GetAtt 
+          - SRASQLMyDB
+          - Endpoint.Port
+        - /
+        - !Ref DBName
