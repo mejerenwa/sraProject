@@ -28,7 +28,7 @@ steps:
       regionName: ${{ parameters.awsRegion }}
       stackName: 'sra_ec2_V2'
       templateSource: 'file'
-      templateFile: 'sraProject/sra_ec2_V2.yml'
+      templateFile: 'sra_ec2_V2.yml'
       templateParametersSource: 'inline'
       templateParameters: |
         - ParameterKey: InstanceType
