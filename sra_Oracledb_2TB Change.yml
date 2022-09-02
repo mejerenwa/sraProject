@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Oracle for SRA
+
+Parameters:
+  EnvironmentName: 
+    Type: String
+    Default: dev
+  InstanceType:
+    Type: String
+    Description: EC2 Instance type
+  StorageType: 
+    Type: String
+    Default: gp2
+  Subnets:
+    Default: 'subnet-0fdc8344303884367,subnet-02a36f9e9c315f0a9'
+    Type: CommaDelimitedList
+    Description: >-
+      The list of SubnetIds, for at least two Availability Zones in the region
+      in your Virtual Private Cloud (VPC)
+  EisaiVpcId:
+    Type: String
+    Description: VPC id for instance
+    Default: vpc-0941114977abb0bc0
+  SRAAppSecurityGrpID:
+    Type: String
+    Description: App Security grp id for instance
+    Default: SRAAppSecurityGrpID
+  DBName:
+    Default: sraorcdb
+    Description: The Oracle database name
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+  DBUsername:
+    Default: sraorcl
+    NoEcho: 'true'
+    Description: The Oracle database admin account username
+    Type: String
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+  DBPassword:
+    Default: sraorcldev
+    NoEcho: 'true'
+    Description: The Oracle database admin account password
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+
+
+Resources:
+  OrclVPCSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 1521
+          ToPort: 1521
+          CidrIp: 10.0.0.0/8
+        - IpProtocol: tcp
+          FromPort: 1433
+          ToPort: 1433
+          SourceSecurityGroupId: 
+            # - !Ref "eisai-${EnvironmentName}-${AWS::Region}-SRAApp-sg"
+            Fn::ImportValue:
+                Fn::Sub: '${SRAAppSecurityGrpID}'
+        - IpProtocol: tcp
+          FromPort: 1521
+          ToPort: 1521
+          SourceSecurityGroupId: 
+            # - !Ref "eisai-${EnvironmentName}-${AWS::Region}-SRAApp-sg"
+            Fn::ImportValue:
+                Fn::Sub: '${SRAAppSecurityGrpID}'
+          # SourceSecurityGroupId: !Ref "eisai-${EnvironmentName}-${AWS::Region}-SRAApp-sg" 
+      GroupDescription: SRA Oracle DB Instance
+      GroupName:  !Sub "eisai-${EnvironmentName}-${AWS::Region}-SRAoracle-sg"
+      VpcId: !Ref EisaiVpcId
+      Tags:
+        - Key: Name
+          Value: !Sub "eisai-${EnvironmentName}-${AWS::Region}-SRAoracle-sg"
+        - Key: Environment
+          Value: !Ref EnvironmentName
+  OrclDBSubnetGroup:
+    Type: 'AWS::RDS::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupDescription: Subnets available for the RDS DB Instance
+      SubnetIds: !Ref Subnets
+          
+  OracleMyDB:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBName: !Ref DBName
+      DBInstanceIdentifier: !Ref DBName
+      DBSubnetGroupName: !Ref OrclDBSubnetGroup
+      VPCSecurityGroups: 
+        - !Ref OrclVPCSecurityGroup
+      AllocatedStorage: '2536'
+      StorageType: !Ref StorageType
+      DBInstanceClass: db.m5.xlarge
+      Engine: oracle-ee
+      LicenseModel: bring-your-own-license
+      Port: '1521'
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBParameterGroupName: !Ref OrclRDSParamGroup
+      MultiAZ: 'true'
+    DeletionPolicy: Snapshot
+  OrclRDSParamGroup:
+    Type: 'AWS::RDS::DBParameterGroup'
+    Properties:
+      Family: oracle-ee-19
+      Description: Oracle DB Parameter Group
+      Parameters:
+        compatible: '12.2.0.1'
+Outputs:
+  JDBCConnectionString:
+    Description: JDBC connection string for the Oracle database
+    Value: !Join 
+      - ''
+      - - 'jdbc:oracle://'
+        - !GetAtt 
+          - OracleMyDB
+          - Endpoint.Address
+        - ':'
+        - !GetAtt 
+          - OracleMyDB
+          - Endpoint.Port
+        - /
+        - !Ref DBName

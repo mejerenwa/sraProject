@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: S3 for SRA
+
+Parameters:
+  Versioning: 
+    Description: S3 for SRA Replication
+    Type: String
+    Default: Suspended
+    AllowedValues: [Enabled, Suspended]
+
+Resources:
+  sras3bucketdev:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref "AWS::StackName"
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: !Ref Versioning
+    # For encryption
+    # BucketEncyption: AWS::S3::Bucket
+    #   ServerSideEncryptionConfiguration:
+    #   - ServerSideEncryptionDefault:
+    #       SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+Outputs:
+  BucketName:
+    Value: !Ref sras3bucketdev
+  BucketArn:
+    Value: !GetAtt sras3bucketdev.Arn
+  BucketDomainName:
+    Value: !GetAtt sras3bucketdev.DomainName
+  BucketRegionalDomainName:
+    Value: !GetAtt sras3bucketdev.RegionalDomainName
+  BucketWebsiteUrl:
+    Value: !GetAtt sras3bucketdev.WebsiteURL
