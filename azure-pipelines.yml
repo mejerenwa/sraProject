@@ -43,4 +43,4 @@ stages:
         deploy:
           steps:
           - checkout: self
-          - template: develop-pipeline.yaml
+          - template: develop-ec2-pipeline.yaml
