@@ -1,0 +1,12 @@
+steps:
+ 
+- template: develop/develop-pipeline.yaml
+  parameters:
+    awsCredentials: 'AWS-clinical-shared-dev'
+    awsRegion: 'us-east-1'
+    EnvironmentName: 'dev'
+    InstanceType: 'm5.large'
+    Subnet: 'subnet-0076750448aafa5ce'
+    EisaiVpcId: 'vpc-0941114977abb0bc0'
+    SSHKey: 'sra-dev-ec2-key-pair'
+    AMIId: 'ami-09e13647920b2ba1d'
