@@ -17,19 +17,6 @@ variables:
   isDevelop: $[eq(variables['Build.SourceBranch'], 'refs/heads/develop')]
 
 stages:
-- stage: Sandbox
-  condition: eq(variables.isSandbox, true)
-  jobs:
-  - deployment: Landing
-    pool:
-      vmImage: 'ubuntu-latest'
-    environment: sandbox
-    strategy:                  
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
-          - template: sandbox-pipeline.yaml
 
 - stage: Develop
   condition: eq(variables.isDevelop, true)
