@@ -1,23 +1,46 @@
 # Starter pipeline
-- task: CloudFormationCreateOrUpdateStack@1
-  inputs:
-    stackName: 'sra_sqlDBdev'
-    templateSource: 'file'
 # Start with a minimal pipeline that you can customize to build and deploy your code.
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
-
+---
+ 
 trigger:
-- main
+  branches:
+    include:
+    - develop
 
-pool:
-  vmImage: ubuntu-latest
+pr:
+- none
+ 
+variables:
+  isSandbox: $[eq(variables['Build.SourceBranch'], 'refs/heads/sandbox')]
+  isDevelop: $[eq(variables['Build.SourceBranch'], 'refs/heads/develop')]
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+stages:
+- stage: Sandbox
+  condition: eq(variables.isSandbox, true)
+  jobs:
+  - deployment: Landing
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: sandbox
+    strategy:                  
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - template: sandbox-pipeline.yaml
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- stage: Develop
+  condition: eq(variables.isDevelop, true)
+  jobs:
+  - deployment: Landing
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: develop
+    strategy:                  
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - template: develop-pipeline.yaml
