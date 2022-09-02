@@ -1,0 +1,45 @@
+parameters:
+- name: awsCredentials
+  type: string
+- name: awsRegion
+  type: string
+- name: EnvironmentName
+  type: string
+- name: InstanceType
+  type: string
+- name: Subnet
+  type: string
+- name: EisaiVpcId
+  type: string
+- name: SSHKey
+  type: string
+- name: AMIId
+  type: string  
+ 
+
+
+steps:
+
+
+  - task: CloudFormationCreateOrUpdateStack@1
+    displayName: 'Deploy ec2 '
+    inputs:
+      awsCredentials:  ${{ parameters.awsCredentials }}
+      regionName: ${{ parameters.awsRegion }}
+      stackName: 'sra_ec2_V2'
+      templateSource: 'file'
+      templateFile: 'sraProject/sra_ec2_V2.yml'
+      templateParametersSource: 'inline'
+      templateParameters: |
+        - ParameterKey: InstanceType
+          ParameterValue: '${{ parameters.InstanceType }}'
+        - ParameterKey: Subnet
+          ParameterValue: '${{ parameters.Subnet }}'
+        - ParameterKey: EisaiVpcId
+          ParameterValue: '${{ parameters.EisaiVpcId }}'
+        - ParameterKey: SSHKey
+          ParameterValue: '${{ parameters.SSHKey }}'
+        - ParameterKey: AMIId
+          ParameterValue: '${{ parameters.AMIId }}'  
+        - ParameterKey: EnvironmentName
+          ParameterValue: '${{ parameters.EnvironmentName }}'
