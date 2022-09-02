@@ -18,10 +18,10 @@ Parameters:
     Type: String
     Description: VPC id for instance
     Default: vpc-0941114977abb0bc0
-  SRADBSecurityGroup:
+  SRAAppSecurityGrpID:
     Type: String
-    Description: SG  for DB instance
-    Default: "eisai-${EnvironmentName}-${AWS::Region}-SRAoracle-sg"
+    Description: App Security grp id for instance
+    Default: sg-05a731d6412ef963f
   DBName:
     Default: srasqldb
     Description: The Oracle database name
@@ -65,15 +65,17 @@ Resources:
   SRASQLMyDB:
     Type: 'AWS::RDS::DBInstance'
     Properties:
-      DBName: !Ref DBName
+      # DBName: !Ref DBName
       DBInstanceIdentifier: !Ref DBName
       DBSubnetGroupName: !Ref DBSubnetGroup
-      VPCSecurityGroups:
-        - !Ref SRADBSecurityGroup
-      AllocatedStorage: '100'
-      DBInstanceClass: db.t3.small
+      VPCSecurityGroups: 
+        - sg-05a731d6412ef963f
+        # Fn::ImportValue:
+        #     Fn::Sub: '${SRAAppSecurityGrpID}'
+      AllocatedStorage: '20'
+      DBInstanceClass: db.m5.xlarge
       Engine: sqlserver-ee
-      #EngineVersion: '12.1.0.2.v27'
+      EngineVersion: '15.00.4198.2.v1'
       LicenseModel: license-included
       Port: '1433'
       MasterUsername: !Ref DBUsername
